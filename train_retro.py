@@ -31,8 +31,8 @@ class PINN:
             act = torch.nn.Tanh
         ).to(device)
 
-        self.h = 0.1 # 设置空间步长
-        self.k = 0.1 # 设置时间步长
+        self.h = 0.01 # 设置空间步长
+        self.k = 0.01 # 设置时间步长
         x = torch.arange(-1, 1 + self.h, self.h) # 在[-1,1]区间上均匀取值，记为x
         y = torch.arange(-1, 1 + self.h, self.h)  # 在[-1,1]区间上均匀取值，记为y
         t = torch.arange(0, 1 + self.k, self.k) # 在[0,1]区间均匀取值，记为t
@@ -114,8 +114,8 @@ class PINN:
             retain_graph = True,
             create_graph = True
         )[0]
-        dT_dx = dT_dxyt[:, 0]
-        dT_dy = dT_dxyt[:, 1]
+        # dT_dx = dT_dxyt[:, 0]
+        # dT_dy = dT_dxyt[:, 1]
         dT_dt = dT_dxyt[:, 2]
 
         # 使用自动微分求U对X的二阶导数
@@ -127,7 +127,7 @@ class PINN:
             create_graph=True
         )[0]
         dT_dxx = dT_dXX[:, 0]
-        dT_dyy = dT_dXX[:, 0]
+        dT_dyy = dT_dXX[:, 1]
 
         # loss_eqution MSE中其实就是 已知的偏微分方程，此处为Burgers方程
         pde_func = dT_dt + torch.matmul(self.u_inside, dT_dxyt[:,:2].T)
