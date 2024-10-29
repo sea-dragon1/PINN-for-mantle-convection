@@ -5,7 +5,7 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 
-class Network(nn.Module):
+class FC_Network(nn.Module):
 
     def __init__(self,
                 input_size, # 输入层神经元个数
@@ -14,7 +14,7 @@ class Network(nn.Module):
                 depth, # 隐藏层深度
                 act = torch.nn.Tanh):
 
-        super(Network, self).__init__() # 调用父类的构造函数
+        super(FC_Network, self).__init__() # 调用父类的构造函数
 
         # 输入层
         layers = [('input', torch.nn.Linear(input_size, hidden_size))]

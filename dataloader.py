@@ -26,11 +26,9 @@ class Inside_Grid(Dataset):
         self.shuffle = shuffle
 
     def __len__(self):
-
         return len(self.X_inside)
 
     def __getitem__(self, idx):
-
         return self.X_inside[idx],self.u_inside[idx]
 
     def get_batches(self):
@@ -73,13 +71,45 @@ class Boundary_Dataloader(Dataset):
         self.T_boundary = torch.cat([T_bcx1, T_bcx2, T_bcy1, T_bcy2, T_ic])  # 将所有边界处的T值整合为一个张量
         self.T_boundary = self.T_boundary.unsqueeze(1)
 
+        # 边界处的u,p值
+        # 初边值条件 T(-1,y,t)=0, T(1,y,t)=0, T(x,y,1)=-sin(pi*x)-sin(pi*y)
+        # !!!需要针对具体方程重写
+        u_bcx1 = torch.zeros(len(bcx1))  # x=-1处的第一类边界条件 T=0
+        u_bcx2 = torch.zeros(len(bcx2))  # x=1 处的第二类边界条件 T=0
+        u_bcy1 = torch.zeros(len(bcy1))  # y=-1处的第一类边界条件 T=0
+        u_bcy2 = torch.zeros(len(bcy2))  # y=1 处的第二类边界条件 T=0
+        u_ic = -torch.sin(math.pi * ic[:, 0]) - torch.sin(math.pi * ic[:, 1])  # t=0的初值条件 T=-sin(pi*x)-sin(pi*y)
+        self.u_boundary = torch.cat([u_bcx1, u_bcx2, u_bcy1, u_bcy2, u_ic])  # 将所有边界处的T值整合为一个张量
+        self.u_boundary = self.u_boundary.unsqueeze(1)
+
+        # 初边值条件 T(-1,y,t)=0, T(1,y,t)=0, T(x,y,1)=-sin(pi*x)-sin(pi*y)
+        # !!!需要针对具体方程重写
+        v_bcx1 = torch.zeros(len(bcx1))  # x=-1处的第一类边界条件 T=0
+        v_bcx2 = torch.zeros(len(bcx2))  # x=1 处的第二类边界条件 T=0
+        v_bcy1 = torch.zeros(len(bcy1))  # y=-1处的第一类边界条件 T=0
+        v_bcy2 = torch.zeros(len(bcy2))  # y=1 处的第二类边界条件 T=0
+        v_ic = -torch.sin(math.pi * ic[:, 0]) - torch.sin(math.pi * ic[:, 1])  # t=0的初值条件 T=-sin(pi*x)-sin(pi*y)
+        self.v_boundary = torch.cat([v_bcx1, v_bcx2, v_bcy1, v_bcy2, v_ic])  # 将所有边界处的T值整合为一个张量
+        self.v_boundary = self.v_boundary.unsqueeze(1)
+
+        # 边界处的u,p值
+        # 初边值条件 T(-1,y,t)=0, T(1,y,t)=0, T(x,y,1)=-sin(pi*x)-sin(pi*y)
+        # !!!需要针对具体方程重写
+        p_bcx1 = torch.zeros(len(bcx1))  # x=-1处的第一类边界条件 T=0
+        p_bcx2 = torch.zeros(len(bcx2))  # x=1 处的第二类边界条件 T=0
+        p_bcy1 = torch.zeros(len(bcy1))  # y=-1处的第一类边界条件 T=0
+        p_bcy2 = torch.zeros(len(bcy2))  # y=1 处的第二类边界条件 T=0
+        p_ic = -torch.sin(math.pi * ic[:, 0]) - torch.sin(math.pi * ic[:, 1])  # t=0的初值条件 T=-sin(pi*x)-sin(pi*y)
+        self.p_boundary = torch.cat([p_bcx1, p_bcx2, p_bcy1, p_bcy2, p_ic])  # 将所有边界处的T值整合为一个张量
+        self.p_boundary = self.p_boundary.unsqueeze(1)
+
     def __len__(self):
 
         return len(self.T_boundary)
 
     def __getitem__(self, idx):
 
-        return self.X_boundary[idx], self.T_boundary[idx]
+        return self.X_boundary[idx], self.T_boundary[idx], self.u_boundary[idx], self.v_boundary[idx], self.p_boundary[idx]
 
     def get_batches(self):
         """
@@ -88,9 +118,9 @@ class Boundary_Dataloader(Dataset):
         return DataLoader(self, batch_size=self.batch_size, shuffle=self.shuffle)
 
 
-Inside_Grid_loader = Inside_Grid(batch_size=2, shuffle=False, h=0.01, k=0.01)
-Indide_batch_loader = Inside_Grid_loader.get_batches()
-print(len(Inside_Grid_loader))
-Bdry_loader = Boundary_Dataloader(batch_size=2, shuffle=False, h=0.01, k=0.01)
-Bdry_batch_loader = Bdry_loader.get_batches()
-print(len(Bdry_loader))
+# Inside_Grid_loader = Inside_Grid(batch_size=2, shuffle=False, h=0.01, k=0.01)
+# Indide_batch_loader = Inside_Grid_loader.get_batches()
+# print(len(Inside_Grid_loader))
+# Bdry_loader = Boundary_Dataloader(batch_size=2, shuffle=False, h=0.01, k=0.01)
+# Bdry_batch_loader = Bdry_loader.get_batches()
+# print(len(Bdry_loader))
