@@ -5,7 +5,7 @@ import os
 import time
 import pandas as pd
 from pinn_model import PINN
-from dataloader import Inside_Grid,Boundary_Dataloader
+from dataloader0 import Inside_Grid,Boundary_Dataloader
 
 def build_optimizer(network, optimizer_name, learning_rate):
 

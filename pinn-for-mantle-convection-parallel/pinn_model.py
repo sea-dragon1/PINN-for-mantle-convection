@@ -13,7 +13,7 @@ from dataloader0 import Inside_Grid,Boundary_Dataloader
 # Boundary condition: T(0,y,t) = 0, T(x,0,t) = 0,
 # Initial condition:　T(x,y,0) = T_0(x,y,0)
 
-class PINN_T:
+class PINN:
     '''
     初始化网络实例
     确定方程与边界损失
@@ -33,6 +33,14 @@ class PINN_T:
             act = torch.nn.ReLU
         ).to(self.device)
 
+        self.up_NN_model = FC_Network(
+            input_size = 3,
+            hidden_size = 16,
+            output_size = 3,
+            depth = 8,
+            act = torch.nn.ReLU
+        ).to(self.device)
+
         # 设置MSE
         self.MSE = torch.nn.MSELoss()
 
@@ -46,9 +54,11 @@ class PINN_T:
         self.v_boundary = v_boundary.to(self.device)
         self.p_boundary = p_boundary.to(self.device)
         T_pred_boundary = self.T_NN_model(self.X_boundary)
-        loss_ht_boundary = self.MSE(T_pred_boundary, self.T_boundary)
+        u_pred_boundary,v_pred_boundary,p_pred_boundary = self.up_NN_model(self.X_boundary).chunk(3, dim=1) #
+        loss_ht_boundary = self.MSE(T_pred_boundary, self.T_boundary)+ self.MSE(u_pred_boundary, self.u_boundary)
+        loss_ns_boundary =  self.MSE(v_pred_boundary, self.v_boundary)+ self.MSE(p_pred_boundary, self.p_boundary)
 
-        return loss_ht_boundary
+        return loss_ht_boundary,loss_ns_boundary
 
     def heat_transfer_loss(self, X_inside, u_inside):
 
@@ -87,47 +97,10 @@ class PINN_T:
 
         return loss_eqution
 
-
-class PINN_ns:
-    '''
-    初始化网络实例
-    确定方程与边界损失
-    '''
-    def __init__(self, epochs, batch_bdry, batch_inside, devive):
-        self.device = devive
-        self.epochs = epochs
-        self.batch_bdry = batch_bdry
-        self.batch_inside = batch_inside
-
-        self.up_NN_model = FC_Network(
-            input_size = 2,
-            hidden_size = 16,
-            output_size = 3,
-            depth = 8,
-            act = torch.nn.ReLU
-        ).to(self.device)
-
-        # 设置MSE
-        self.MSE = torch.nn.MSELoss()
-
-
-    def boundary_loss(self, X_bdry,u_bdry,v_bdry,p_bdry,rho_bdry,e_bdry):
-        # 第一部分loss: 边界条件
-
-        self.X_boundary = X_bdry.to(self.device)
-        self.u_boundary = u_bdry.to(self.device)
-        self.v_boundary = v_bdry.to(self.device)
-        self.p_boundary = p_bdry.to(self.device)
-        u_pred_boundary,v_pred_boundary,p_pred_boundary = self.up_NN_model(self.X_boundary).chunk(3, dim=1) #
-        loss_ns_boundary = self.MSE(v_pred_boundary, self.v_boundary)+ self.MSE(p_pred_boundary, self.p_boundary)
-
-        return loss_ns_boundary
-
-    def navier_stokes_loss(self, x, y):
+    def navier_stokes_loss(self, x, y, t):
 
         g = 9.8
-        xy = torch.cat((x.unsqueeze(0), y.unsqueeze(0)))
-        u, v, p = self.up_NN_model(xy.T).chunk(3, dim=1)  # 分割输出为u和v
+        u, v, p = self.up_NN_model(torch.cat((x.unsqueeze(0), y.unsqueeze(0), t.unsqueeze(0)), 0).T).chunk(3, dim=1)  # 分割输出为u和v
         rho = torch.ones_like(u)
 
         # 计算梯度
@@ -140,7 +113,7 @@ class PINN_ns:
 
         p_x = torch.autograd.grad(p, x, grad_outputs=torch.ones_like(p), create_graph=True)[0]
         p_y = torch.autograd.grad(p, y, grad_outputs=torch.ones_like(p), create_graph=True)[0]
-        # p_t = torch.autograd.grad(p, t, grad_outputs=torch.ones_like(p), create_graph=True)[0]
+        p_t = torch.autograd.grad(p, t, grad_outputs=torch.ones_like(p), create_graph=True)[0]
 
         # 计算拉普拉斯算子
         u_xx = torch.autograd.grad(u_x, x, grad_outputs=torch.ones_like(u_x), create_graph=True)[0]
